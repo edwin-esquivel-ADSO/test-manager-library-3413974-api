@@ -12,6 +12,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() === 'pgsql') {
+            DB::statement('CREATE SCHEMA IF NOT EXISTS library;');
+        }
+
         // 1. category
         Schema::create('category', function (Blueprint $table) {
             $table->uuid('id')->primary();

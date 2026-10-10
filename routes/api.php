@@ -15,6 +15,11 @@ use App\Http\Controllers\ReportController;
 |--------------------------------------------------------------------------
 */
 
+// Root health check (spec: GET /health)
+Route::get('/health', function () {
+    return response()->json(['status' => 'ok'], 200);
+});
+
 Route::prefix('v1')->group(function () {
 
     // 3.1 Public routes

@@ -40,7 +40,9 @@ class LoanController extends Controller
             );
         }
 
-        $now = Carbon::now('UTC');
+        $now = $request->filled('loaned_at')
+            ? Carbon::parse($request->input('loaned_at'), 'UTC')
+            : Carbon::now('UTC');
 
         // Check if member has overdue loans (CA-06.5 -> 409)
         $hasOverdue = DB::table('loan_item')

@@ -20,6 +20,10 @@ class LibraryContractTest extends TestCase
 
     public function test_health_check()
     {
+        $rootResponse = $this->getJson('/health');
+        $rootResponse->assertStatus(200)
+            ->assertJson(['status' => 'ok']);
+
         $response = $this->getJson('/api/v1/health');
         $response->assertStatus(200)
             ->assertJson(['status' => 'ok']);
