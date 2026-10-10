@@ -1,51 +1,40 @@
 # test-manager-library-3413974-api
 
-> **Prueba técnica · Ficha ADSO 3413974**
-> Horario: de **9:15 a. m. a 3:00 p. m.** (15:00). Después, **feria de presentación** de cada proyecto.
+> **Prueba técnica · Ficha ADSO 3413974**  
+> **Backend:** PHP 8.2 con Laravel 11  
+> **Arquitectura:** Hexagonal / Clean Architecture (SDD)  
 
-Este repositorio es el **backend** de *Manager Library*, en **PHP con Laravel**. **Empieza vacío a propósito**: se construye en el fork de cada aprendiz.
+Este repositorio contiene la implementación del **Backend** de *Manager Library*, respetando estrictamente el contrato HTTP de `api-contract.md` y el modelo de datos de `data-model.md`.
 
-## Instrucciones
+## Características Implementadas
 
-Cada aprendiz debe **crear el fork** de los seis repositorios del proyecto y **resolver el proyecto
-con el spec planteado**.
+- **Esquema de Base de Datos y Migraciones (ADR-001):** Todo el DDL reside en `database/migrations/`. La migración inicial crea las 6 tablas con llaves foráneas (`RESTRICT` / `CASCADE`), restricciones `CHECK` (`ck_book_available_range`, `ck_book_total_positive`, `ck_user_role`) y siembra las 5 categorías oficiales con UUIDs fijos.
+- **Autenticación y Seguridad (CA-01, CA-02):** Emisión de tokens JWT con vigencia de 8 horas (`firebase/php-jwt`). Contraseñas encriptadas; nunca expuestas en logs ni respuestas JSON.
+- **Gestión de Libros (HU-03, HU-04):** Búsqueda paginada, filtros, edición con recálculo de stock y baja lógica (`deleted_at`) protegiendo libros con préstamos abiertos (`409 BOOK_HAS_OPEN_LOANS`).
+- **Gestión de Socios (HU-05):** Alta y consulta de socios con documento único. No se eliminan (CA-05.3).
+- **Préstamos y Devoluciones (HU-06, HU-07, HU-08, HU-09):** Préstamos transaccionales de 1 a 3 libros por 14 días. Límite de 3 libros activos por socio y bloqueo por mora. Estados calculados dinámicamente (`open`, `overdue`, `closed`). Devolución por línea con restitución de ejemplar disponible.
+- **Reporte de Libros Más Prestados (HU-10, ADR-004):** Consulta agregada que agrupa por valores históricos congelados (`book_title`, `category_name`), preservando la inmutabilidad histórica.
+- **Manejo Centralizado de Errores (RNF-4):** Formato uniforme `{ "code": "...", "message": "...", "details": [...] }` para cualquier código HTTP (401, 403, 404, 409, 422).
 
-1. Hacer fork, a su cuenta de GitHub, de cada repositorio de la tabla del final.
-2. Leer el spec en [`test-manager-library-3413974-docs`](https://github.com/code-sena/test-manager-library-3413974-docs).
-   Se entrega en dos versiones: `spec-python/` y `spec-.net/`.
-3. Desarrollar en los forks.
+## Requisitos y Puesta en Marcha
 
-## El reto se desarrolla con React y PHP (Laravel)
+```bash
+# 1. Instalar dependencias
+composer install
 
-El spec está escrito para Python y para .NET, pero el reto **no** se hace en esos lenguajes:
+# 2. Configurar entorno
+cp .env.example .env
+php artisan key:generate
 
-| Capa | Tecnología del reto |
-|---|---|
-| Frontend | React |
-| Backend | PHP con Laravel |
+# 3. Ejecutar migraciones
+php artisan migrate:fresh
 
-Lo que el spec define sobre el negocio —historias, criterios de aceptación, reglas, contrato de la
-API, modelo de datos— se respeta. Lo que define sobre la tecnología se traduce a React y Laravel.
+# 4. Aprovisionar usuario administrador inicial
+php artisan library:ensure-admin
 
-## La prueba no consiste en escribir el código
+# 5. Ejecutar pruebas automatizadas
+php artisan test
 
-El propósito principal es ver la **capacidad de desempeño con SDD** (*Spec-Driven Development*,
-desarrollo guiado por especificación): cómo se lee, se interpreta y se aplica una especificación
-para llevarla a un stack distinto. El código es el medio, no el fin.
-
-## Feria de presentación
-
-Al cerrar la prueba (3:00 p. m.) cada aprendiz **presenta su proyecto** al grupo: qué construyó del spec, qué dejó fuera y por qué,
-y una demostración corta de lo que funciona (la aplicación y el sitio público). Lo que se presenta es lo que quedó **subido a los forks
-antes de las 3:00 p. m.**: no se presenta nada que no esté en GitHub.
-
-## Los seis repositorios
-
-| Repositorio | Qué va ahí |
-|---|---|
-| [`test-manager-library-3413974-docs`](https://github.com/code-sena/test-manager-library-3413974-docs) | El spec: `spec-python/` y `spec-.net/` |
-| [`test-manager-library-3413974-api`](https://github.com/code-sena/test-manager-library-3413974-api) | Backend en PHP (Laravel) |
-| [`test-manager-library-3413974-app`](https://github.com/code-sena/test-manager-library-3413974-app) | Frontend en React |
-| [`test-manager-library-3413974-page`](https://github.com/code-sena/test-manager-library-3413974-page) | Sitio público estático de presentación |
-| [`test-manager-library-3413974-infra`](https://github.com/code-sena/test-manager-library-3413974-infra) | Contenedores, red, volúmenes y motor de base de datos vacío |
-| [`test-manager-library-3413974-tool`](https://github.com/code-sena/test-manager-library-3413974-tool) | Utilidades: sembrador de datos de demostración |
+# 6. Iniciar servidor de desarrollo
+php artisan serve --port=8000
+```
